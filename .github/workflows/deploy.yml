@@ -1,0 +1,31 @@
+name: Build and Deploy
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install and build
+        run: |
+          npm install
+          npm run build
+
+      - name: Deploy to SiteGround
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.SG_HOST }}
+          username: ${{ secrets.SG_USER }}
+          key: ${{ secrets.SG_SSH_KEY }}
+          port: 18765
+          source: 'dist/*'
+          target: 'www.skynet2.valitointl.com/public_html' 
+          strip_components: 1
