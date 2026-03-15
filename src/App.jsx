@@ -148,7 +148,6 @@ export default function App() {
 
   return (
     <div style={{ width: "100vw", height: "100vh", background: C.bg, color: C.text, fontFamily: F, display: "flex", flexDirection: "column", overflow: "hidden", position: "relative" }}>
-      <h1>DETTA ÄR ETT TEST 123</h1>
       {/* TOP MENU BAR */}
       <div style={{ height: 32, flexShrink: 0, display: "flex", alignItems: "center", borderBottom: `1px solid ${C.border}`, background: "#020810" }}>
         <div style={{ padding: "0 16px", fontSize: 13, letterSpacing: 6, color: C.cyan, fontWeight: 700, fontFamily: F, borderRight: `1px solid ${C.border}`, height: "100%", display: "flex", alignItems: "center" }}>
