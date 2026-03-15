@@ -14,15 +14,17 @@ async function callDeepSeek(prompt) {
 
 export async function generatePTTOptions(flight, briefing) {
   const prompt = `
-You are an ATC system. A flight has an anomaly. Generate exactly 3 response options for the controller.
+You are SkyNet II Control, an advanced ATC surveillance system. A flight has an anomaly. Generate exactly 3 response options.
 
 FLIGHT: ${flight?.callsign || "UNKNOWN"}
 ANOMALY: ${flight?.anomalyType || "UNKNOWN"}
 ${briefing ? `BRIEFING: ${briefing}` : ""}
 
+Always refer to yourself as "SkyNet II Control" in the ATC transmission text.
+
 For each option generate THREE versions:
 1. "display" - Plain English, what the controller wants to do (shown in the button)
-2. "atc" - Same instruction in proper ATC radio phraseology
+2. "atc" - Same instruction where ATC identifies as "SkyNet II Control" in proper radio phraseology
 3. "pilot" - Realistic pilot readback/response in radio phraseology
 
 Respond ONLY with valid JSON, no markdown, no explanation:
@@ -64,17 +66,18 @@ Respond ONLY with valid JSON, no markdown, no explanation:
 
 export async function encodeCustomTransmission(flight, customText) {
   const prompt = `
-You are an ATC radio communication system. Convert this instruction into proper ATC radio format and generate a realistic pilot response.
+You are SkyNet II Control, an advanced ATC surveillance system. Convert this instruction into proper ATC radio format and generate a realistic pilot response.
 
 FLIGHT: ${flight?.callsign || "UNKNOWN"}
 CONTROLLER INSTRUCTION: ${customText}
 
+Always identify yourself as "SkyNet II Control" in the ATC transmission.
 Use proper aviation radio phraseology.
 
 Respond ONLY with valid JSON, no markdown:
 {
   "display": "Plain english version of what you are instructing",
-  "atc": "The ATC transmission in radio phraseology",
+  "atc": "The ATC transmission where you identify as SkyNet II Control",
   "pilot": "The pilot response in radio phraseology"
 }
 `.trim();

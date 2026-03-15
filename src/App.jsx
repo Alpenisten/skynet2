@@ -5,6 +5,7 @@ import { C, F }              from "./constants/theme";
 import { useFlights }        from "./hooks/useFlights";
 import { useFlightAnalysis } from "./hooks/useFlightAnalysis";
 import { generatePTTOptions, encodeCustomTransmission } from "./lib/ptt";
+import { transmitRadio } from "./lib/elevenlabs";
 
 import GlobeRenderer   from "./components/globe/GlobeRenderer";
 import Panel           from "./components/panels/Panel";
@@ -13,6 +14,7 @@ import ContactPanel    from "./components/panels/ContactPanel";
 import DataStreamPanel from "./components/panels/DataStreamPanel";
 import MainframeStatus from "./components/panels/MainframeStatus";
 import BarChart        from "./components/ui/BarChart";
+
 
 
 // ── Hooks ────────────────────────────────────────────────────────────────────
@@ -77,6 +79,8 @@ export default function App() {
   const [pttEncoded, setPttEncoded]         = useState(null);
   const [pttEncoding, setPttEncoding]       = useState(false);
   const [pttDebug, setPttDebug]             = useState(null);
+  const [pttTransmitting, setPttTransmitting] = useState(false);
+  const [pttPhase, setPttPhase]               = useState(null); // "atc" | "pilot" | null
   const pttRef = useRef(null);
   
   useEffect(() => {
@@ -116,6 +120,30 @@ export default function App() {
       setPttDebug(result);
     }
     setPttEncoding(false);
+  };
+
+  const handleTransmit = async () => {
+    if (pttTransmitting) return;
+    let atcText   = null;
+    let pilotText = null;
+    if (pttSelected !== null) {
+      const options = getPTTOptions(selectedFlight?.id);
+      const opt     = options?.[pttSelected];
+      atcText   = opt?.atc;
+      pilotText = opt?.pilot;
+    } else if (pttEncoded) {
+      atcText   = pttEncoded.atc;
+      pilotText = pttEncoded.pilot;
+    }
+    if (!atcText || !pilotText) return;
+    setPttTransmitting(true);
+    await transmitRadio(
+      atcText,
+      pilotText,
+      () => setPttPhase("atc"),
+      () => setPttPhase("pilot"),
+      () => { setPttTransmitting(false); setPttPhase(null); }
+    );
   };
 
   return (
@@ -167,9 +195,19 @@ export default function App() {
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               <span style={{ color: C.orange, fontSize: 9 }}>◆</span>
               <span style={{ fontSize: 11, letterSpacing: 4, color: C.orange, fontWeight: 700, fontFamily: F }}>SELECT TRANSMISSION</span>
-              <span style={{ fontSize: 9, letterSpacing: 3, color: C.dim, fontFamily: F }}>
-                {selectedFlight?.callsign} — CHOOSE ACTION OR COMPOSE CUSTOM
-              </span>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <span style={{ fontSize: 9, letterSpacing: 3, color: C.dim, fontFamily: F }}>
+                  {selectedFlight?.callsign} — CHOOSE ACTION OR COMPOSE CUSTOM
+                </span>
+                {pttTransmitting && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <div style={{ width: 6, height: 6, borderRadius: "50%", background: C.green, animation: "pulse-opacity 0.8s ease-in-out infinite" }}/>
+                    <span style={{ fontSize: 9, color: C.green, letterSpacing: 2, fontFamily: F }}>
+                      {pttPhase === "atc" ? "SKYNET II CONTROL TRANSMITTING" : "PILOT RESPONDING"}
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
             <div onClick={() => { setPttOpen(false); setPttOptions(null); }} style={{ cursor: "pointer", color: C.dim, fontSize: 14, fontFamily: F }}>✕</div>
           </div>
@@ -226,30 +264,23 @@ export default function App() {
               {pttEncoding ? "ENCODING..." : "ENCODE"}
             </button>
             <button
-              disabled={pttSelected === null && !pttEncoded}
+              onClick={handleTransmit}
+              disabled={(pttSelected === null && !pttEncoded) || pttTransmitting}
               style={{
-                background: (pttSelected !== null || pttEncoded) ? "rgba(0,255,100,0.1)" : "rgba(255,140,0,0.05)",
-                border: `1px solid ${(pttSelected !== null || pttEncoded) ? C.green : C.dim}`,
-                color: (pttSelected !== null || pttEncoded) ? C.green : C.dim,
+                background: "transparent",
+                border: `1px solid ${(pttSelected !== null || pttEncoded) && !pttTransmitting ? C.green : C.dim}`,
+                color: (pttSelected !== null || pttEncoded) && !pttTransmitting ? C.green : C.dim,
                 fontSize: 9, letterSpacing: 4, padding: "6px 16px",
-                fontFamily: F, cursor: (pttSelected !== null || pttEncoded) ? "pointer" : "not-allowed",
+                fontFamily: F,
+                cursor: (pttSelected !== null || pttEncoded) && !pttTransmitting ? "pointer" : "not-allowed",
                 opacity: (pttSelected !== null || pttEncoded) ? 1 : 0.4,
+                transition: "all 0.2s", whiteSpace: "nowrap",
               }}>
-              ▶▶ TRANSMIT
+              {pttTransmitting
+                ? pttPhase === "atc" ? "ATC..." : "PILOT..."
+                : "▶▶ TRANSMIT"}
             </button>
           </div>
-
-          {pttDebug && (
-            <div style={{ margin: "0 16px 12px", padding: "8px 12px", border: `1px solid ${C.border}`, background: "rgba(0,0,0,0.3)" }}>
-              <div style={{ fontSize: 8, color: C.orange, letterSpacing: 3, fontFamily: F, marginBottom: 4 }}>
-                DEBUG — {pttDebug.display?.toUpperCase()}
-              </div>
-              <div style={{ fontSize: 8, color: C.dim, letterSpacing: 2, fontFamily: F, marginTop: 8, marginBottom: 2 }}>ATC TRANSMISSION</div>
-              <div style={{ fontSize: 9, color: C.cyan, fontFamily: F, letterSpacing: 1, marginBottom: 8, lineHeight: 1.6 }}>{pttDebug.atc}</div>
-              <div style={{ fontSize: 8, color: C.dim, letterSpacing: 2, fontFamily: F, marginBottom: 2 }}>PILOT RESPONSE</div>
-              <div style={{ fontSize: 9, color: C.text, fontFamily: F, letterSpacing: 1, lineHeight: 1.6 }}>{pttDebug.pilot}</div>
-            </div>
-          )}
         </div>
       )}
 
