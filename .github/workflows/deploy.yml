@@ -30,7 +30,7 @@ jobs:
           key: ${{ secrets.SG_SSH_KEY }}
           port: 18765
           source: 'dist/*'
-          target: 'skynet2.valitointl.com/public_html' 
+          target: '/home/customer/www/skynet2.valitointl.com/public_html'
           strip_components: 1
 
 
