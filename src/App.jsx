@@ -284,6 +284,7 @@ export default function App() {
         </div>
       )}
 
+
       {/* MAIN AREA */}
       <div style={{ flex: 1, display: "flex", overflow: "hidden", gap: 1 }}>
 

@@ -31,6 +31,7 @@ jobs:
           port: 18765
           source: 'dist/*'
           target: '/home/customer/www/skynet2.valitointl.com/public_html'
+          args: '-v' # Denna rad gör att du ser alla filer som laddas upp i loggen!
           strip_components: 1
 
 
